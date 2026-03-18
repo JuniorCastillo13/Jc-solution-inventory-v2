@@ -171,6 +171,21 @@ input[type=date]{color-scheme:dark;}.light input[type=date]{color-scheme:light;}
 .emp-equip-icon{width:40px;height:40px;border-radius:10px;background:var(--btn2-solid);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden;}
 .emp-equip-icon img{width:100%;height:100%;object-fit:cover;}
 .pb-safe{padding-bottom:calc(10px + var(--safe-bot));}
+.prod-cat-chip{padding:5px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;border:1px solid var(--btn2-border);background:var(--btn2-solid);color:var(--sub);transition:all .2s;}
+.prod-cat-chip.active{background:var(--accent-grad);border:none;color:#fff;}
+.stock-badge{padding:3px 9px;border-radius:var(--radius-full);font-size:11px;font-weight:700;}
+.stock-ok{background:#d1fae5;color:#065f46;}.stock-low{background:#fef3c7;color:#92400e;}.stock-out{background:#fee2e2;color:#991b1b;}
+.inv-card{background:var(--card-solid);border-radius:var(--radius);border:1px solid var(--card-border);padding:14px 16px;margin-bottom:10px;cursor:pointer;}
+.inv-num{font-size:11px;color:var(--accent);font-weight:800;letter-spacing:1px;}
+.inv-client{font-size:15px;font-weight:700;margin-top:2px;}
+.inv-total{font-size:18px;font-weight:900;color:#10b981;}
+.inv-date{font-size:11px;color:var(--muted);}
+.inv-type{padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:700;}
+.inv-rep{background:#fef3c7;color:#92400e;}.inv-sale{background:#dbeafe;color:#1e40af;}.inv-mixed{background:#f3e8ff;color:#6b21a8;}
+.billing-tile{background:var(--card-solid);border-radius:var(--radius);padding:16px;border:1px solid var(--card-border);display:flex;flex-direction:column;gap:4px;}
+.billing-tile-val{font-size:24px;font-weight:900;letter-spacing:-1px;}
+.billing-tile-label{font-size:11px;color:var(--sub);font-weight:600;}
+@media print{body *{visibility:hidden;}#print-area,#print-area *{visibility:visible;}#print-area{position:fixed;inset:0;background:#fff;color:#000;padding:24px;font-family:Arial,sans-serif;}}
 .user-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 6px;border-radius:var(--radius-full);background:var(--btn2-solid);border:1px solid var(--btn2-border);font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;}
 .user-pill .avatar{width:22px;height:22px;border-radius:50%;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;}
 .online-dot{width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;}
@@ -241,11 +256,11 @@ const REPAIR_STATUS=[
 ];
 const MOVE_TYPES=["Asignación","Devolución","Reparación","Traslado","Baja","Otro"];
 const HCHIP={Asignación:"hc-asignacion",Devolución:"hc-devolucion",Reparación:"hc-reparacion",Traslado:"hc-traslado",Baja:"hc-baja",Otro:"hc-otro"};
-const NAV=[{id:"list",icon:"📦",label:"Equipos"},{id:"history",icon:"📋",label:"Historial"},{id:"employees",icon:"👥",label:"Empleados"},{id:"stats",icon:"📊",label:"Stats"}];
+const NAV=[{id:"list",icon:"📦",label:"Equipos"},{id:"products",icon:"🛍️",label:"Productos"},{id:"invoices",icon:"🧾",label:"Facturas"},{id:"billing",icon:"💰",label:"Ingresos"},{id:"stats",icon:"📊",label:"Stats"}];
 const USERS={junior:{id:"junior",nombre:"Junior Castillo",pin:"1326",rol:"admin",ini:"JC"},bryan:{id:"bryan",nombre:"Bryan Castillo",pin:"1996",rol:"usuario",ini:"BC"}};
 
 let cu=null,lus="junior",unsubs=[];
-let S={dark:true,screen:"list",equipment:[],employees:[],history:[],selectedId:null,editingId:null,empDetailId:null,editingEmpId:null,search:"",filterCat:"todos",histFilter:"todos",dismissed:[],form:{},empForm:{},moveForm:{tipo:"Asignación",notas:""},showNotif:false,showDel:false,showMove:false,showQR:false,showEmpForm:false,showUserMenu:false,showRS:false,scanning:false,qrInput:"",loaded:{eq:false,emp:false,hist:false}};
+let S={dark:true,screen:"list",equipment:[],employees:[],history:[],products:[],invoices:[],selectedId:null,editingId:null,empDetailId:null,editingEmpId:null,selectedInvId:null,search:"",filterCat:"todos",histFilter:"todos",prodFilter:"todos",invFilter:"todos",billingPeriod:"hoy",dismissed:[],form:{},empForm:{},moveForm:{tipo:"Asignación",notas:""},prodForm:{},invForm:{tipo:"reparacion",cliente:"",telefono:"",items:[],descuento:0,notas:""},showNotif:false,showDel:false,showMove:false,showQR:false,showEmpForm:false,showUserMenu:false,showRS:false,showProdForm:false,showInvForm:false,showInvDetail:false,scanning:false,qrInput:"",loaded:{eq:false,emp:false,hist:false,prod:false,inv:false}};
 
 window.selectLoginUser=id=>{lus=id;document.getElementById("chip-junior").classList.toggle("selected",id==="junior");document.getElementById("chip-bryan").classList.toggle("selected",id==="bryan");document.getElementById("login-pin").value="";document.getElementById("login-pin").focus();};
 window.doLogin=()=>{const pin=document.getElementById("login-pin").value.trim();const u=USERS[lus];if(pin===u.pin){cu=u;document.getElementById("login-screen").style.display="none";document.getElementById("app").style.display="flex";document.getElementById("login-error").textContent="";const p=localStorage.getItem("jcs_dark");if(p!==null)S.dark=p==="1";if(!S.dark)document.body.classList.add("light");startL();render();}else{document.getElementById("login-error").textContent="Contraseña incorrecta";document.getElementById("login-pin").value="";document.getElementById("login-pin").focus();}};
@@ -256,9 +271,11 @@ function startL(){
   const eU=onSnapshot(query(collection(db,"equipment"),orderBy("createdAt","asc")),s=>{S.equipment=s.docs.map(d=>({...d.data(),id:d.id}));S.loaded.eq=true;chkL();},e=>{console.error(e);showSync("err","Error equipos");});
   const mpU=onSnapshot(query(collection(db,"employees"),orderBy("createdAt","asc")),s=>{S.employees=s.docs.map(d=>({...d.data(),id:d.id}));S.loaded.emp=true;chkL();},e=>{console.error(e);showSync("err","Error empleados");});
   const hU=onSnapshot(query(collection(db,"history"),orderBy("createdAt","desc")),s=>{S.history=s.docs.map(d=>({...d.data(),id:d.id}));S.loaded.hist=true;chkL();},e=>{console.error(e);showSync("err","Error historial");});
-  unsubs=[eU,mpU,hU];
+  const pU=onSnapshot(query(collection(db,"products"),orderBy("createdAt","asc")),s=>{S.products=s.docs.map(d=>({...d.data(),id:d.id}));S.loaded.prod=true;chkL();},e=>{console.error(e);showSync("err","Error productos");});
+  const iU=onSnapshot(query(collection(db,"invoices"),orderBy("createdAt","desc")),s=>{S.invoices=s.docs.map(d=>({...d.data(),id:d.id}));S.loaded.inv=true;chkL();},e=>{console.error(e);showSync("err","Error facturas");});
+  unsubs=[eU,mpU,hU,pU,iU];
 }
-function chkL(){if(S.loaded.eq&&S.loaded.emp&&S.loaded.hist){showSync("ok","Sincronizado ✓");render();}}
+function chkL(){if(S.loaded.eq&&S.loaded.emp&&S.loaded.hist&&S.loaded.prod&&S.loaded.inv){showSync("ok","Sincronizado ✓");render();}}
 
 const today=()=>new Date().toISOString().split("T")[0];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
@@ -396,15 +413,171 @@ function rStats(){
   </div>`;
 }
 
-function aN(){if(["detail","form"].includes(S.screen))return "list";if(S.screen==="empdetail")return "employees";return S.screen;}
+function aN(){if(["detail","form"].includes(S.screen))return "list";if(S.screen==="empdetail")return "employees";if(S.screen==="invdetail")return "invoices";return S.screen;}
 window.render=function(){
   if(!S.dark)document.body.classList.add("light");else document.body.classList.remove("light");
-  const sc={list:rList,detail:rDetail,form:rForm,history:rHistory,employees:rEmployees,empdetail:rEmpDetail,stats:rStats};
+  const sc={list:rList,detail:rDetail,form:rForm,history:rHistory,employees:rEmployees,empdetail:rEmpDetail,stats:rStats,products:rProducts,invoices:rInvoices,invdetail:rInvDetail,billing:rBilling};
   document.getElementById("screen-content").innerHTML=(sc[S.screen]||rList)();
   const an=aN();
   document.getElementById("bottom-nav").innerHTML=NAV.map(n=>`<button class="nav-btn${an===n.id?" active":""}" onclick="setScreen('${n.id}')"><span class="nav-icon">${n.icon}</span>${n.label}</button>`).join("");
   document.getElementById("screen-content").scrollTop=0;
 };
+
+/* ── PRODUCTS SCREEN ── */
+const PROD_CATS=["Accesorio","Repuesto","Equipo","Otro"];
+function rProducts(){
+  if(!S.loaded.prod)return rLoading();
+  const fp=S.prodFilter==="todos"?S.products:S.products.filter(p=>p.categoria===S.prodFilter);
+  const chps=["todos",...PROD_CATS].map(c=>`<button class="prod-cat-chip${S.prodFilter===c?" active":""}" onclick="S.prodFilter='${c}';render()">${c==="todos"?"🛍️ Todos":c}</button>`).join("");
+  const cards=fp.length===0?`<div class="empty"><div style="font-size:48px">📭</div><div style="margin-top:10px">Sin productos</div></div>`:fp.map(p=>{
+    const stock=p.stock||0;const sb=stock===0?`<span class="stock-badge stock-out">Sin stock</span>`:stock<=5?`<span class="stock-badge stock-low">Stock bajo: ${stock}</span>`:`<span class="stock-badge stock-ok">Stock: ${stock}</span>`;
+    return `<div class="card fade-in"><div class="card-icon">${p.emoji||"📦"}</div><div style="flex:1;min-width:0"><div class="card-name">${p.nombre}</div><div class="card-sub">${p.categoria} · ${fmtP(p.precio)}</div><div style="margin-top:5px">${sb}</div></div><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><button class="btn btn-secondary" style="padding:5px 10px;font-size:12px" onclick="event.stopPropagation();S.prodForm={...S.products.find(x=>x.id==='${p.id}')};S.editingProdId='${p.id}';S.showProdForm=true;render()">✏️</button><button class="btn btn-green" style="padding:5px 10px;font-size:12px" onclick="event.stopPropagation();addProdToInv('${p.id}')">＋ Venta</button></div></div>`;
+  }).join("");
+  let pMod="";
+  if(S.showProdForm){
+    const f=S.prodForm||{};
+    const catOpts=PROD_CATS.map(c=>`<option${f.categoria===c?" selected":""}>${c}</option>`).join("");
+    const emojis=["📦","📱","💻","🖥️","⌨️","🖱️","🔌","🔋","📷","🎧","🔧","🛡️"];
+    const emojiPicker=emojis.map(e=>`<button style="font-size:22px;background:${f.emoji===e?"var(--accent-grad)":"var(--btn2-solid)"};border:1px solid var(--btn2-border);border-radius:8px;padding:6px;cursor:pointer" onclick="S.prodForm.emoji='${e}';render()">${e}</button>`).join("");
+    pMod=`<div class="overlay" onclick="S.showProdForm=false;render()"><div class="modal" onclick="event.stopPropagation()"><div class="modal-title">${S.editingProdId?"Editar producto":"Nuevo producto"}</div>
+    <div class="field"><div class="field-label">Ícono</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">${emojiPicker}</div></div>
+    <div class="field"><div class="field-label">Nombre <span class="req">*</span></div><input class="field-input" value="${f.nombre||""}" placeholder="Ej. Funda iPhone 15" oninput="S.prodForm.nombre=this.value"></div>
+    <div class="field"><div class="field-label">Categoría</div><select class="field-select" onchange="S.prodForm.categoria=this.value">${catOpts}</select></div>
+    <div class="field"><div class="field-label">Precio de venta (RD$) <span class="req">*</span></div><input class="field-input" type="number" inputmode="decimal" value="${f.precio||""}" placeholder="Ej. 500" oninput="S.prodForm.precio=parseFloat(this.value)||0"></div>
+    <div class="field"><div class="field-label">Costo (RD$)</div><input class="field-input" type="number" inputmode="decimal" value="${f.costo||""}" placeholder="Ej. 250" oninput="S.prodForm.costo=parseFloat(this.value)||0"></div>
+    <div class="field"><div class="field-label">Stock disponible</div><input class="field-input" type="number" inputmode="numeric" value="${f.stock||""}" placeholder="Ej. 10" oninput="S.prodForm.stock=parseInt(this.value)||0"></div>
+    <div class="field"><div class="field-label">Descripción</div><textarea class="field-textarea" placeholder="Descripción del producto..." oninput="S.prodForm.descripcion=this.value">${f.descripcion||""}</textarea></div>
+    <div class="btn-row"><button class="btn btn-secondary" style="flex:1" onclick="S.showProdForm=false;render()">Cancelar</button><button class="btn btn-accent" style="flex:1" onclick="saveProduct()">Guardar</button></div>
+    ${S.editingProdId?`<button class="btn btn-delete btn-full" style="margin-top:8px" onclick="deleteProd('${S.editingProdId}')">🗑️ Eliminar producto</button>`:""}
+    </div></div>`;
+  }
+  return `<div class="header"><div class="header-row"><div><div class="logo">JC SOLUTION</div><div class="title">Productos</div><div class="subtitle">${S.products.length} productos registrados</div></div><div class="header-btns"><button class="btn-circle accent" onclick="S.prodForm={nombre:'',categoria:'Accesorio',precio:0,costo:0,stock:0,emoji:'📦',descripcion:''};S.editingProdId=null;S.showProdForm=true;render()">＋</button></div></div></div>
+  <div class="chips">${chps}</div>
+  <div class="list pb-safe" style="padding-top:8px">${cards}</div>${pMod}`;
+}
+window.saveProduct=async()=>{
+  const f=S.prodForm;if(!f.nombre){showToast("El nombre es obligatorio","err");return;}
+  const id=S.editingProdId||uid();const ex=S.products.find(p=>p.id===id);
+  await fsSet("products",id,{...f,id,createdAt:ex?.createdAt||serverTimestamp()});
+  S.showProdForm=false;S.prodForm={};S.editingProdId=null;render();
+};
+window.deleteProd=async id=>{await fsDel("products",id);S.showProdForm=false;render();};
+window.addProdToInv=id=>{
+  const p=S.products.find(x=>x.id===id);if(!p)return;
+  const ex=S.invForm.items.find(i=>i.prodId===id);
+  if(ex){ex.qty+=1;}else{S.invForm.items.push({prodId:id,nombre:p.nombre,precio:p.precio,qty:1,tipo:"venta"});}
+  S.screen="invoices";S.showInvForm=true;render();showToast(`➕ ${p.nombre} agregado`);
+};
+
+/* ── INVOICES SCREEN ── */
+function invTotal(inv){return(inv.items||[]).reduce((s,i)=>s+(i.precio*i.qty),0)-(inv.descuento||0);}
+function invTypeBadge(t){const m={reparacion:{cls:"inv-rep",l:"🔧 Reparación"},venta:{cls:"inv-sale",l:"🛍️ Venta"},mixta:{cls:"inv-mixed",l:"⚡ Mixta"}};const x=m[t]||m.venta;return `<span class="inv-type ${x.cls}">${x.l}</span>`;}
+function rInvoices(){
+  if(!S.loaded.inv)return rLoading();
+  const fi=S.invFilter==="todos"?S.invoices:S.invoices.filter(i=>i.tipo===S.invFilter);
+  const chps=["todos","reparacion","venta","mixta"].map(t=>`<button class="chip${S.invFilter===t?" active":""}" onclick="S.invFilter='${t}';render()">${t==="todos"?"🧾 Todas":t==="reparacion"?"🔧 Reparación":t==="venta"?"🛍️ Venta":"⚡ Mixta"}</button>`).join("");
+  const cards=fi.length===0?`<div class="empty"><div style="font-size:48px">📭</div><div style="margin-top:10px">Sin facturas</div></div>`:fi.map(inv=>`<div class="inv-card fade-in" onclick="S.selectedInvId='${inv.id}';setScreen('invdetail')"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="inv-num">#${inv.numero||inv.id.slice(-6).toUpperCase()}</div><div class="inv-client">${inv.cliente||"Cliente"}</div>${inv.telefono?`<div style="font-size:12px;color:var(--sub)">📞 ${inv.telefono}</div>`:""}</div><div style="text-align:right"><div class="inv-total">${fmtP(invTotal(inv))}</div><div class="inv-date">${inv.fecha}</div></div></div><div style="margin-top:8px;display:flex;gap:6px;align-items:center">${invTypeBadge(inv.tipo)}<span style="font-size:12px;color:var(--muted)">${(inv.items||[]).length} ítem${(inv.items||[]).length!==1?"s":""}</span></div></div>`).join("");
+  let iMod="";
+  if(S.showInvForm){
+    const f=S.invForm;
+    const tipoOpts=["reparacion","venta","mixta"].map(t=>`<option value="${t}"${f.tipo===t?" selected":""}>${t==="reparacion"?"🔧 Reparación":t==="venta"?"🛍️ Venta":"⚡ Mixta"}</option>`).join("");
+    const eqOpts=`<option value="">-- Seleccionar equipo --</option>`+S.equipment.map(e=>`<option value="${e.id}">${e.nombre} · ${e.serie}</option>`).join("");
+    const prodOpts=`<option value="">-- Seleccionar producto --</option>`+S.products.map(p=>`<option value="${p.id}">${p.nombre} · ${fmtP(p.precio)}</option>`).join("");
+    const itemRows=(f.items||[]).map((it,idx)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--row-border)"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${it.nombre}</div><div style="font-size:12px;color:var(--sub)">${fmtP(it.precio)} c/u</div></div><div style="display:flex;align-items:center;gap:6px"><button style="background:var(--btn2-solid);border:1px solid var(--btn2-border);border-radius:6px;color:var(--text);width:26px;height:26px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center" onclick="S.invForm.items[${idx}].qty=Math.max(1,S.invForm.items[${idx}].qty-1);render()">−</button><span style="font-size:14px;font-weight:700;min-width:20px;text-align:center">${it.qty}</span><button style="background:var(--btn2-solid);border:1px solid var(--btn2-border);border-radius:6px;color:var(--text);width:26px;height:26px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center" onclick="S.invForm.items[${idx}].qty+=1;render()">＋</button><button style="background:var(--del-bg);border:1px solid var(--del-border);border-radius:6px;color:var(--del-text);width:26px;height:26px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center" onclick="S.invForm.items.splice(${idx},1);render()">✕</button></div></div>`).join("");
+    const subtotal=(f.items||[]).reduce((s,i)=>s+(i.precio*i.qty),0);
+    const total=subtotal-(f.descuento||0);
+    iMod=`<div class="overlay" onclick="S.showInvForm=false;render()"><div class="modal" onclick="event.stopPropagation()" style="max-height:92vh"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="modal-title" style="margin-bottom:0">🧾 Nueva factura</div><button style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer" onclick="S.showInvForm=false;render()">✕</button></div>
+    <div class="field"><div class="field-label">Tipo</div><select class="field-select" onchange="S.invForm.tipo=this.value">${tipoOpts}</select></div>
+    <div class="field"><div class="field-label">Cliente <span class="req">*</span></div><input class="field-input" value="${f.cliente||""}" placeholder="Nombre del cliente" oninput="S.invForm.cliente=this.value"></div>
+    <div class="field"><div class="field-label">Teléfono</div><input class="field-input" type="tel" inputmode="numeric" value="${f.telefono||""}" placeholder="809-000-0000" oninput="S.invForm.telefono=this.value"></div>
+    ${f.tipo!=="venta"?`<div class="field"><div class="field-label">Agregar equipo (reparación)</div><select class="field-select" onchange="addEqToInv(this.value)">${eqOpts}</select></div>`:""}
+    ${f.tipo!=="reparacion"?`<div class="field"><div class="field-label">Agregar producto (venta)</div><select class="field-select" onchange="addProdItemToInv(this.value)">${prodOpts}</select></div>`:""}
+    <div class="field"><div class="field-label">Ítems (${(f.items||[]).length})</div>${itemRows.length?itemRows:`<div style="font-size:13px;color:var(--muted);padding:8px 0">Sin ítems agregados</div>`}</div>
+    <div style="background:var(--btn2-solid);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--sub);margin-bottom:4px"><span>Subtotal</span><span>${fmtP(subtotal)}</span></div><div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--sub);margin-bottom:8px"><span>Descuento (RD$)</span><input style="background:transparent;border:none;border-bottom:1px solid var(--input-border);color:var(--text);font-size:13px;font-weight:700;width:80px;text-align:right;outline:none;font-family:inherit" type="number" inputmode="decimal" value="${f.descuento||0}" oninput="S.invForm.descuento=parseFloat(this.value)||0;render()"></div><div style="display:flex;justify-content:space-between;font-size:17px;font-weight:900;color:#10b981"><span>TOTAL</span><span>${fmtP(total)}</span></div></div>
+    <div class="field"><div class="field-label">Notas</div><textarea class="field-textarea" placeholder="Observaciones..." oninput="S.invForm.notas=this.value">${f.notas||""}</textarea></div>
+    <div class="btn-row"><button class="btn btn-secondary" style="flex:1" onclick="S.showInvForm=false;render()">Cancelar</button><button class="btn btn-accent" style="flex:1" onclick="saveInvoice()">💾 Guardar</button></div>
+    </div></div>`;
+  }
+  return `<div class="header"><div class="header-row"><div><div class="logo">JC SOLUTION</div><div class="title">Facturas</div><div class="subtitle">${S.invoices.length} facturas emitidas</div></div><div class="header-btns"><button class="btn-circle accent" onclick="S.invForm={tipo:'reparacion',cliente:'',telefono:'',items:[],descuento:0,notas:''};S.showInvForm=true;render()">＋</button></div></div></div>
+  <div class="chips">${chps}</div>
+  <div class="list pb-safe" style="padding-top:8px">${cards}</div>${iMod}`;
+}
+window.addEqToInv=id=>{if(!id)return;const eq=S.equipment.find(e=>e.id===id);if(!eq)return;const ex=S.invForm.items.find(i=>i.eqId===id);if(ex)return;S.invForm.items.push({eqId:id,nombre:eq.nombre+(eq.falla?" - "+eq.falla:""),precio:eq.repairPrice||0,qty:1,tipo:"reparacion"});render();};
+window.addProdItemToInv=id=>{if(!id)return;const p=S.products.find(x=>x.id===id);if(!p)return;const ex=S.invForm.items.find(i=>i.prodId===id);if(ex){ex.qty+=1;}else{S.invForm.items.push({prodId:id,nombre:p.nombre,precio:p.precio,qty:1,tipo:"venta"});}render();};
+window.saveInvoice=async()=>{
+  const f=S.invForm;if(!f.cliente){showToast("El nombre del cliente es obligatorio","err");return;}
+  if(!f.items||f.items.length===0){showToast("Agrega al menos un ítem","err");return;}
+  const id=uid();const num=S.invoices.length+1;
+  await fsSet("invoices",id,{...f,id,numero:num,fecha:today(),fechaISO:new Date().toISOString(),total:invTotal(f),resp:cu?cu.nombre:"Admin",createdAt:serverTimestamp()});
+  // reduce stock for products
+  for(const it of f.items){if(it.prodId){const p=S.products.find(x=>x.id===it.prodId);if(p&&p.stock>0){await fsSet("products",p.id,{...p,stock:Math.max(0,p.stock-it.qty)});}}}
+  S.showInvForm=false;S.invForm={tipo:"reparacion",cliente:"",telefono:"",items:[],descuento:0,notas:""};
+  showToast("🧾 Factura guardada");render();
+};
+
+/* ── INVOICE DETAIL ── */
+function rInvDetail(){
+  const inv=S.invoices.find(i=>i.id===S.selectedInvId);if(!inv){setScreen("invoices");return "";}
+  const total=invTotal(inv);
+  const itemRows=(inv.items||[]).map(it=>`<div class="info-row"><span class="info-label">${it.nombre} x${it.qty}</span><span class="info-value">${fmtP(it.precio*it.qty)}</span></div>`).join("");
+  const printHTML=`
+    <div style="font-family:Arial,sans-serif;color:#000;padding:20px;max-width:400px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:20px"><div style="font-size:22px;font-weight:900;letter-spacing:2px">JC SOLUTION</div><div style="font-size:12px;color:#666">Inventory & Repair</div><div style="font-size:11px;color:#999;margin-top:4px">Factura #${inv.numero||inv.id.slice(-6).toUpperCase()}</div></div>
+      <div style="border-top:2px solid #000;border-bottom:1px solid #ccc;padding:10px 0;margin-bottom:14px"><div style="font-size:13px"><b>Cliente:</b> ${inv.cliente}</div>${inv.telefono?`<div style="font-size:13px"><b>Tel:</b> ${inv.telefono}</div>`:""}<div style="font-size:13px"><b>Fecha:</b> ${inv.fecha}</div><div style="font-size:13px"><b>Tipo:</b> ${inv.tipo==="reparacion"?"Reparación":inv.tipo==="venta"?"Venta":"Mixta"}</div></div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse">${(inv.items||[]).map(it=>`<tr><td style="padding:5px 0">${it.nombre}</td><td style="text-align:center;padding:5px">x${it.qty}</td><td style="text-align:right;padding:5px">${fmtP(it.precio*it.qty)}</td></tr>`).join("")}</table>
+      <div style="border-top:1px solid #ccc;margin-top:10px;padding-top:10px">${inv.descuento?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#666"><span>Descuento</span><span>-${fmtP(inv.descuento)}</span></div>`:""}
+      <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:900;margin-top:6px"><span>TOTAL</span><span>${fmtP(total)}</span></div></div>
+      ${inv.notas?`<div style="margin-top:12px;font-size:12px;color:#666;border-top:1px solid #eee;padding-top:8px">${inv.notas}</div>`:""}
+      <div style="text-align:center;margin-top:20px;font-size:11px;color:#999">¡Gracias por su preferencia!</div>
+    </div>`;
+  const whatsappMsg=encodeURIComponent(`*JC SOLUTION - Factura #${inv.numero||inv.id.slice(-6).toUpperCase()}*\n\nCliente: ${inv.cliente}\nFecha: ${inv.fecha}\n\n${(inv.items||[]).map(it=>`• ${it.nombre} x${it.qty} = ${fmtP(it.precio*it.qty)}`).join("\n")}${inv.descuento?`\nDescuento: -${fmtP(inv.descuento)}`:""}\n\n*TOTAL: ${fmtP(total)}*\n\n¡Gracias por su preferencia!`);
+  return `<div style="background:var(--header);padding:calc(var(--safe-top)+18px) 20px 20px;border-bottom:1px solid var(--card-border)"><button class="back-btn" onclick="setScreen('invoices')" style="margin-bottom:14px">‹ Volver</button><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="inv-num">#${inv.numero||inv.id.slice(-6).toUpperCase()}</div><div style="font-size:20px;font-weight:900;margin-top:2px">${inv.cliente}</div>${inv.telefono?`<div style="font-size:13px;color:var(--sub)">📞 ${inv.telefono}</div>`:""}</div><div style="text-align:right"><div style="font-size:22px;font-weight:900;color:#10b981">${fmtP(total)}</div><div style="font-size:12px;color:var(--muted)">${inv.fecha}</div></div></div><div style="margin-top:10px">${invTypeBadge(inv.tipo)}</div></div>
+  <div style="padding:18px 20px 120px">
+    <div class="info-card"><div class="info-title">Ítems facturados</div>${itemRows}${inv.descuento?`<div class="info-row"><span class="info-label" style="color:var(--del-text)">Descuento</span><span class="info-value" style="color:var(--del-text)">-${fmtP(inv.descuento)}</span></div>`:""}
+    <div class="info-row" style="margin-top:4px"><span class="info-label" style="font-weight:800;font-size:14px">TOTAL</span><span class="info-value" style="font-size:17px;font-weight:900;color:#10b981">${fmtP(total)}</span></div></div>
+    ${inv.notas?`<div class="info-card"><div class="info-title">Notas</div><p style="font-size:13px;color:var(--sub)">${inv.notas}</p></div>`:""}
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+      <button class="btn btn-accent btn-full" onclick="printInvoice(\`${encodeURIComponent(printHTML)}\`)">🖨️ Imprimir / Guardar PDF</button>
+      <a href="https://wa.me/?text=${whatsappMsg}" target="_blank" style="text-decoration:none"><button class="btn btn-green btn-full" style="width:100%">📱 Enviar por WhatsApp</button></a>
+      <button class="btn btn-secondary btn-full" onclick="shareInvoice('${inv.id}')">📧 Compartir</button>
+      <button class="btn btn-delete btn-full" onclick="deleteInv('${inv.id}')">🗑️ Eliminar factura</button>
+    </div>
+  </div>`;
+}
+window.printInvoice=encoded=>{const html=decodeURIComponent(encoded);const w=window.open("","_blank","width=420,height=700");w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Factura JC Solution</title></head><body>${html}<script>window.onload=function(){window.print();}<\/script></body></html>`);w.document.close();};
+window.shareInvoice=async invId=>{const inv=S.invoices.find(i=>i.id===invId);if(!inv)return;const total=invTotal(inv);const text=`JC SOLUTION - Factura #${inv.numero||inv.id.slice(-6).toUpperCase()}\nCliente: ${inv.cliente}\nFecha: ${inv.fecha}\n${(inv.items||[]).map(it=>`• ${it.nombre} x${it.qty} = ${fmtP(it.precio*it.qty)}`).join("\n")}\nTOTAL: ${fmtP(total)}`;if(navigator.share){await navigator.share({title:"Factura JC Solution",text});}else{navigator.clipboard?.writeText(text);showToast("📋 Factura copiada al portapapeles");}};
+window.deleteInv=async id=>{await fsDel("invoices",id);setScreen("invoices");};
+
+/* ── BILLING SCREEN ── */
+function rBilling(){
+  if(!S.loaded.inv)return rLoading();
+  const todayStr=today();
+  const nowDate=new Date();
+  const thisMonth=todayStr.slice(0,7);
+  const invHoy=S.invoices.filter(i=>i.fecha===todayStr);
+  const invMes=S.invoices.filter(i=>i.fecha&&i.fecha.startsWith(thisMonth));
+  const invAll=S.invoices;
+  const sum=arr=>arr.reduce((s,i)=>s+invTotal(i),0);
+  const byType=(arr,t)=>arr.filter(i=>i.tipo===t);
+  const period=S.billingPeriod;
+  const invSel=period==="hoy"?invHoy:period==="mes"?invMes:invAll;
+  const totalSel=sum(invSel);
+  const repSel=sum(byType(invSel,"reparacion"));
+  const venSel=sum(byType(invSel,"venta"));
+  const mixSel=sum(byType(invSel,"mixta"));
+  const periodChps=["hoy","mes","total"].map(p=>`<button class="chip${S.billingPeriod===p?" active":""}" onclick="S.billingPeriod='${p}';render()">${p==="hoy"?"📅 Hoy":p==="mes"?"📆 Este mes":"🗂️ Todo"}</button>`).join("");
+  const recentRows=invSel.slice(0,8).map(inv=>`<div class="info-row" style="cursor:pointer" onclick="S.selectedInvId='${inv.id}';setScreen('invdetail')"><span class="info-label" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${inv.cliente}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--muted)">${inv.fecha}</span><span style="font-size:13px;font-weight:800;color:#10b981">${fmtP(invTotal(inv))}</span></div></div>`).join("");
+  return `<div class="header"><div class="logo">JC SOLUTION</div><div class="title">Ingresos</div><div class="subtitle">Resumen de facturación</div></div>
+  <div style="padding:16px 16px 120px">
+    <div class="chips" style="padding:0 0 14px">${periodChps}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="billing-tile" style="grid-column:1/-1;background:linear-gradient(135deg,#059669,#10b981)"><div class="billing-tile-val" style="color:#fff;font-size:28px">${fmtP(totalSel)}</div><div class="billing-tile-label" style="color:rgba(255,255,255,.8)">Total ${period==="hoy"?"hoy":period==="mes"?"este mes":"acumulado"}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${invSel.length} factura${invSel.length!==1?"s":""}</div></div>
+      <div class="billing-tile"><div class="billing-tile-val" style="color:#f59e0b">${fmtP(repSel)}</div><div class="billing-tile-label">🔧 Reparaciones</div><div style="font-size:11px;color:var(--muted)">${byType(invSel,"reparacion").length} fact.</div></div>
+      <div class="billing-tile"><div class="billing-tile-val" style="color:#818cf8">${fmtP(venSel+mixSel)}</div><div class="billing-tile-label">🛍️ Ventas</div><div style="font-size:11px;color:var(--muted)">${byType(invSel,"venta").length+byType(invSel,"mixta").length} fact.</div></div>
+    </div>
+    ${invSel.length>0?`<div class="info-card"><div class="info-title">Facturas del período</div>${recentRows}</div>`:`<div class="empty"><div style="font-size:48px">📭</div><div style="margin-top:10px">Sin facturas en este período</div></div>`}
+  </div>`;
+}
 window.S=S;
 window.addEventListener("online",()=>showSync("ok","Conexión restaurada ✓"));
 window.addEventListener("offline",()=>showSync("offline","Sin conexión · modo offline"));
