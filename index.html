@@ -310,7 +310,7 @@ function exportCSV(){const eq=filteredEq();const h=["Nombre","Cat","Marca","Mode
 
 function filteredEq(){const q=S.search.toLowerCase();return S.equipment.filter(e=>(e.nombre.toLowerCase().includes(q)||e.asignado.toLowerCase().includes(q)||e.serie.toLowerCase().includes(q))&&(S.filterCat==="todos"||e.cat===S.filterCat));}
 
-window.openNew=()=>{S.form={nombre:"",cat:"celular",marca:"",modelo:"",serie:"",asignado:"Sin asignar",empId:null,estado:"Activo",fecha:today(),notas:"",foto:null,falla:"",repairPrice:null,repairStatus:null,dueno:"",duenoTel:"",clienteId:null};S.editingId=null;setScreen("form");};
+window.openNew=()=>{S.form={nombre:"",cat:"celular",marca:"",modelo:"",serie:"",asignado:"Sin asignar",empId:null,estado:"Activo",fecha:today(),notas:"",foto:null,falla:"",repairPrice:null,repairStatus:null,dueno:"",duenoTel:"",clienteId:null,materiales:[]};S.editingId=null;setScreen("form");};
 window.openEdit=id=>{S.form={...S.equipment.find(e=>e.id===id)};S.editingId=id;setScreen("form");};
 window.openDetail=id=>{S.selectedId=id;setScreen("detail");};
 window.saveEquip=async()=>{const f=S.form;if(!f.nombre||!f.marca||!f.serie){showToast("Completa los campos obligatorios","err");return;}const id=S.editingId||uid();const ex=S.equipment.find(e=>e.id===id);await fsSet("equipment",id,{...f,id,createdAt:ex?.createdAt||serverTimestamp()});if(!S.editingId)addHist(id,"Asignación","Equipo registrado",f.nombre);S.selectedId=id;setScreen(S.editingId?"detail":"list");};
@@ -352,12 +352,42 @@ function rDetail(){
   const ih=S.history.filter(h=>h.eqId===item.id);
   const ph=item.foto?`<img src="${item.foto}" style="width:62px;height:62px;border-radius:18px;object-fit:cover;flex-shrink:0">`:`<div style="width:62px;height:62px;border-radius:18px;background:var(--btn2-solid);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0">${catBy(item.cat).i}</div>`;
   const hasR=item.falla||item.repairPrice||item.repairStatus||item.estado==="En reparación";
-  const repCard=hasR?`<div class="repair-card"><div class="repair-title">🔧 Reparación</div>${item.repairStatus?`<div style="margin-bottom:12px">${rsBadge(item.repairStatus)}</div>`:""}${item.falla?`<div style="margin-bottom:12px"><div style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:4px">Falla reportada</div><div style="font-size:14px;color:var(--text);line-height:1.6">${item.falla}</div></div>`:""}${item.repairPrice?`<div><div style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:4px">Precio de reparación</div><div class="price-big">${fmtP(item.repairPrice)}</div></div>`:""}    <button class="btn btn-orange btn-full" style="margin-top:14px" onclick="S.showRS=true;render()">🔄 Cambiar estado de reparación</button></div>`:`<button class="btn btn-orange btn-full" style="margin-bottom:12px" onclick="S.showRS=true;render()">🔧 Registrar estado de reparación</button>`;
+  const totalMat=(item.materiales||[]).reduce((s,m)=>s+(m.costo||0),0);
+  const matRows=(item.materiales||[]).length>0?`<div style="margin-top:12px"><div style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:8px">Materiales utilizados</div>`+
+    (item.materiales||[]).map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--row-border)"><span style="font-size:13px;color:var(--text)">🔩 ${m.nombre}</span><span style="font-size:13px;font-weight:700;color:#f59e0b">${fmtP(m.costo)}</span></div>`).join("")+
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;margin-top:2px"><span style="font-size:12px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">Total materiales</span><span style="font-size:15px;font-weight:900;color:#f59e0b">${fmtP(totalMat)}</span></div></div>`:""
+  const repCard=hasR?`<div class="repair-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="repair-title" style="margin-bottom:0">🔧 Reparación</div><button class="btn btn-secondary" style="padding:5px 11px;font-size:11px;font-weight:700" onclick="S.showMatForm=true;S._matNombre='';S._matCosto=0;render()">＋ Material</button></div>${item.repairStatus?`<div style="margin-bottom:12px">${rsBadge(item.repairStatus)}</div>`:""}${item.falla?`<div style="margin-bottom:12px"><div style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:4px">Falla reportada</div><div style="font-size:14px;color:var(--text);line-height:1.6">${item.falla}</div></div>`:""}${item.repairPrice?`<div style="margin-bottom:4px"><div style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:4px">Precio de reparación</div><div class="price-big">${fmtP(item.repairPrice)}</div></div>`:""}${matRows}<button class="btn btn-orange btn-full" style="margin-top:14px" onclick="S.showRS=true;render()">🔄 Cambiar estado de reparación</button></div>`:`<div style="margin-bottom:12px;display:flex;gap:8px"><button class="btn btn-orange" style="flex:1" onclick="S.showRS=true;render()">🔧 Registrar estado de reparación</button><button class="btn btn-secondary" style="padding:11px 13px" onclick="S.showMatForm=true;S._matNombre='';S._matCosto=0;render()" title="Agregar material">🔩</button></div>`;
   const histH=ih.length===0?"":ih.slice(0,4).map(h=>`<div class="info-row" style="flex-direction:column;align-items:flex-start;gap:4px"><div style="display:flex;gap:8px;align-items:center">${hchip(h.tipo)}<span style="font-size:11px;color:var(--muted)">${h.fecha}</span></div><div style="font-size:12px;color:var(--sub)">${h.notas}</div><div style="font-size:11px;color:var(--muted)">Por: ${h.resp}</div></div>`).join("");
   let dMod="";if(S.showDel)dMod=`<div class="overlay" onclick="S.showDel=false;render()"><div class="modal" onclick="event.stopPropagation()"><div style="text-align:center"><div style="font-size:36px">⚠️</div><div style="font-size:17px;font-weight:800;margin-top:8px">¿Eliminar equipo?</div><div style="font-size:13px;color:var(--sub);margin-top:6px">Esta acción no se puede deshacer.</div></div><div class="btn-row"><button class="btn btn-secondary" style="flex:1" onclick="S.showDel=false;render()">Cancelar</button><button class="btn btn-delete" style="flex:1" onclick="deleteEquip('${item.id}')">Eliminar</button></div></div></div>`;
   let mMod="";if(S.showMove){const tOpts=MOVE_TYPES.map(t=>`<option${S.moveForm.tipo===t?" selected":""}>${t}</option>`).join("");mMod=`<div class="overlay" onclick="S.showMove=false;render()"><div class="modal" onclick="event.stopPropagation()"><div class="modal-title">📋 Registrar movimiento</div><div class="field"><div class="field-label">Tipo</div><select class="field-select" onchange="S.moveForm.tipo=this.value">${tOpts}</select></div><div class="field"><div class="field-label">Notas</div><textarea class="field-textarea" placeholder="Descripción..." oninput="S.moveForm.notas=this.value">${S.moveForm.notas}</textarea></div><div class="btn-row"><button class="btn btn-secondary" style="flex:1" onclick="S.showMove=false;render()">Cancelar</button><button class="btn btn-accent" style="flex:1" onclick="saveMove()">Guardar</button></div></div></div>`;}
   let rsMod="";if(S.showRS){const btns=REPAIR_STATUS.map(r=>{const sel=item.repairStatus===r.id;return `<button class="rs-btn ${sel?r.sel:'rs-idle'}" onclick="setRepairStatus('${item.id}','${r.id}')"><span class="rs-icon">${r.icon}</span>${r.label}</button>`;}).join("");rsMod=`<div class="overlay" onclick="S.showRS=false;render()"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="modal-title" style="margin-bottom:0">🔧 Estado de reparación</div><button style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer" onclick="S.showRS=false;render()">✕</button></div><div style="font-size:13px;color:var(--sub);margin-bottom:14px">Selecciona el estado. Se actualizará automáticamente.</div><div class="rs-grid">${btns}</div><button class="btn btn-secondary btn-full" style="margin-top:12px" onclick="S.showRS=false;render()">Cancelar</button></div></div>`;}
-  return `<div style="background:var(--header);padding:calc(var(--safe-top)+18px) 20px 20px;border-bottom:1px solid var(--card-border)"><div style="display:flex;justify-content:space-between;margin-bottom:14px"><button class="back-btn" onclick="setScreen('list')">‹ Volver</button><button class="btn-circle" onclick="toggleDark()" style="width:34px;height:34px;font-size:15px">${S.dark?"☀️":"🌙"}</button></div><div style="display:flex;align-items:center;gap:14px">${ph}<div><div style="font-size:20px;font-weight:900">${item.nombre}</div><div style="font-size:13px;color:var(--sub);margin-top:2px">${catBy(item.cat).l} · ${item.marca}</div><div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${sBadge(item.estado)}${item.repairStatus?rsBadge(item.repairStatus):""}</div></div></div></div><div style="padding:18px 20px 120px"><div class="info-card"><div class="info-title">Información del equipo</div><div class="info-row"><span class="info-label">Modelo</span><span class="info-value">${item.modelo||"—"}</span></div><div class="info-row"><span class="info-label">No. serie</span><span class="info-value" style="font-family:monospace">${item.serie||"—"}</span></div><div class="info-row"><span class="info-label">Fecha</span><span class="info-value">${item.fecha||"—"}</span></div><div class="info-row"><span class="info-label">Técnico</span><span class="info-value">${item.asignado||"Sin asignar"}</span></div></div>${item.dueno?`<div class="info-card"><div class="info-title">👤 Dueño del equipo</div><div class="info-row"><span class="info-label">Nombre</span><span class="info-value" style="font-weight:700;color:var(--text)">${item.dueno}</span></div>${item.duenoTel?`<div class="info-row"><span class="info-label">Teléfono</span><span class="info-value"><a href="tel:${item.duenoTel}" style="color:var(--accent);text-decoration:none">${item.duenoTel}</a></span></div>`:""}<div style="margin-top:10px;display:flex;gap:8px">${item.duenoTel?`<a href="https://wa.me/1${(item.duenoTel||"").replace(/\D/g,"")}" target="_blank" style="flex:1;text-decoration:none"><button class="btn btn-green btn-full" style="font-size:13px">📱 WhatsApp</button></a>`:""}${item.clienteId?`<button class="btn btn-secondary" style="flex:1;font-size:13px" onclick="S.selectedClientId='${item.clienteId}';setScreen('clientdetail')">👤 Ver cliente</button>`:""}</div></div>`:""} ${repCard}${item.notas?`<div class="info-card"><div class="info-title">Notas</div><p style="font-size:13px;color:var(--sub);line-height:1.7">${item.notas}</p></div>`:""}${ih.length>0?`<div class="info-card"><div class="info-title">Últimos movimientos</div>${histH}</div>`:""}<div class="btn-row"><button class="btn btn-green" style="flex:1" onclick="S.moveForm={tipo:'Asignación',notas:''};S.showMove=true;render()">📋 Movimiento</button></div><div class="btn-row"><button class="btn btn-accent" style="flex:1" onclick="openEdit('${item.id}')">✏️ Editar</button><button class="btn btn-delete" style="padding:11px 16px" onclick="S.showDel=true;render()">🗑️</button></div></div>${dMod}${mMod}${rsMod}`;
+  let matMod="";if(S.showMatForm){
+    const mats=item.materiales||[];
+    const matList=mats.length>0?mats.map((m,idx)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--row-border)"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${m.nombre}</div><div style="font-size:12px;color:#f59e0b;font-weight:700">${fmtP(m.costo)}</div></div><button style="background:var(--del-bg);border:1px solid var(--del-border);color:var(--del-text);border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0" onclick="const eq=S.equipment.find(e=>e.id==='${item.id}');const updated={...eq,materiales:[...(eq.materiales||[])]};updated.materiales.splice(${idx},1);fsSet('equipment','${item.id}',updated).then(()=>render())">✕</button></div>`).join(""):
+    `<div style="font-size:13px;color:var(--muted);padding:8px 0;text-align:center">Sin materiales registrados aún</div>`;
+    const totalMatModal=mats.reduce((s,m)=>s+(m.costo||0),0);
+    matMod=`<div class="overlay" onclick="S.showMatForm=false;render()"><div class="modal" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="modal-title" style="margin-bottom:0">🔩 Materiales</div><button style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer" onclick="S.showMatForm=false;render()">✕</button></div>
+      <div style="font-size:13px;color:var(--sub);margin-bottom:14px">${item.nombre}</div>
+      <div style="margin-bottom:14px">${matList}</div>
+      ${mats.length>0?`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--btn2-solid);border-radius:8px;padding:9px 12px;margin-bottom:14px;border:1px solid var(--btn2-border)"><span style="font-size:12px;font-weight:700;color:var(--sub)">Total</span><span style="font-size:15px;font-weight:900;color:#f59e0b">${fmtP(totalMatModal)}</span></div>`:""}
+      <div style="font-size:10px;letter-spacing:1.5px;color:var(--accent);font-weight:800;text-transform:uppercase;margin-bottom:8px">Agregar material</div>
+      <div class="field"><div class="field-label">Nombre del material</div><input id="det-mat-nombre" class="field-input" placeholder="Ej. Pantalla OLED, Flex de carga..." oninput="S._matNombre=this.value" value="${S._matNombre||""}"></div>
+      <div class="field"><div class="field-label">Costo (RD$)</div><input id="det-mat-costo" class="field-input" type="number" inputmode="decimal" placeholder="Ej. 850.00" oninput="S._matCosto=parseFloat(this.value)||0" value="${S._matCosto||""}"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" style="flex:1" onclick="S.showMatForm=false;render()">Cerrar</button>
+        <button class="btn btn-accent" style="flex:1" onclick="
+          const n=document.getElementById('det-mat-nombre').value.trim();
+          const c=parseFloat(document.getElementById('det-mat-costo').value)||0;
+          if(!n){showToast('Escribe el nombre del material','err');return;}
+          const eq=S.equipment.find(e=>e.id==='${item.id}');
+          const updated={...eq,materiales:[...(eq.materiales||[]),{nombre:n,costo:c}]};
+          fsSet('equipment','${item.id}',updated).then(()=>{S._matNombre='';S._matCosto=0;showToast('🔩 Material agregado');render();});
+        ">＋ Agregar</button>
+      </div>
+    </div></div>`;
+  }
+  return `<div style="background:var(--header);padding:calc(var(--safe-top)+18px) 20px 20px;border-bottom:1px solid var(--card-border)"><div style="display:flex;justify-content:space-between;margin-bottom:14px"><button class="back-btn" onclick="setScreen('list')">‹ Volver</button><button class="btn-circle" onclick="toggleDark()" style="width:34px;height:34px;font-size:15px">${S.dark?"☀️":"🌙"}</button></div><div style="display:flex;align-items:center;gap:14px">${ph}<div><div style="font-size:20px;font-weight:900">${item.nombre}</div><div style="font-size:13px;color:var(--sub);margin-top:2px">${catBy(item.cat).l} · ${item.marca}</div><div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${sBadge(item.estado)}${item.repairStatus?rsBadge(item.repairStatus):""}</div></div></div></div><div style="padding:18px 20px 120px"><div class="info-card"><div class="info-title">Información del equipo</div><div class="info-row"><span class="info-label">Modelo</span><span class="info-value">${item.modelo||"—"}</span></div><div class="info-row"><span class="info-label">No. serie</span><span class="info-value" style="font-family:monospace">${item.serie||"—"}</span></div><div class="info-row"><span class="info-label">Fecha</span><span class="info-value">${item.fecha||"—"}</span></div><div class="info-row"><span class="info-label">Técnico</span><span class="info-value">${item.asignado||"Sin asignar"}</span></div></div>${item.dueno?`<div class="info-card"><div class="info-title">👤 Dueño del equipo</div><div class="info-row"><span class="info-label">Nombre</span><span class="info-value" style="font-weight:700;color:var(--text)">${item.dueno}</span></div>${item.duenoTel?`<div class="info-row"><span class="info-label">Teléfono</span><span class="info-value"><a href="tel:${item.duenoTel}" style="color:var(--accent);text-decoration:none">${item.duenoTel}</a></span></div>`:""}<div style="margin-top:10px;display:flex;gap:8px">${item.duenoTel?`<a href="https://wa.me/1${(item.duenoTel||"").replace(/\D/g,"")}" target="_blank" style="flex:1;text-decoration:none"><button class="btn btn-green btn-full" style="font-size:13px">📱 WhatsApp</button></a>`:""}${item.clienteId?`<button class="btn btn-secondary" style="flex:1;font-size:13px" onclick="S.selectedClientId='${item.clienteId}';setScreen('clientdetail')">👤 Ver cliente</button>`:""}</div></div>`:""} ${repCard}${item.notas?`<div class="info-card"><div class="info-title">Notas</div><p style="font-size:13px;color:var(--sub);line-height:1.7">${item.notas}</p></div>`:""}${ih.length>0?`<div class="info-card"><div class="info-title">Últimos movimientos</div>${histH}</div>`:""}<div class="btn-row"><button class="btn btn-green" style="flex:1" onclick="S.moveForm={tipo:'Asignación',notas:''};S.showMove=true;render()">📋 Movimiento</button></div><div class="btn-row"><button class="btn btn-accent" style="flex:1" onclick="openEdit('${item.id}')">✏️ Editar</button><button class="btn btn-delete" style="padding:11px 16px" onclick="S.showDel=true;render()">🗑️</button></div></div>${dMod}${mMod}${rsMod}${matMod}`;
 }
 
 function rForm(){
@@ -388,6 +418,23 @@ function rForm(){
     <div class="sec-div">🔧 Sección de Reparación</div>
     <div class="field"><div class="field-label">Falla del equipo</div><textarea class="field-textarea" placeholder="Describe la falla o problema del equipo..." oninput="S.form.falla=this.value">${f.falla||""}</textarea></div>
     <div class="field"><div class="field-label">Precio de reparación (RD$)</div><input class="field-input" type="number" inputmode="decimal" placeholder="Ej. 2500.00" value="${f.repairPrice||""}" oninput="S.form.repairPrice=parseFloat(this.value)||null"></div>
+    <div class="field">
+      <div class="field-label">🔩 Materiales utilizados</div>
+      ${(f.materiales||[]).length>0?`<div style="margin-bottom:8px;display:flex;flex-direction:column;gap:6px">`+
+        (f.materiales||[]).map((m,idx)=>`<div style="display:flex;align-items:center;gap:8px;background:var(--btn2-solid);border:1px solid var(--btn2-border);border-radius:10px;padding:9px 12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nombre}</div>
+            <div style="font-size:12px;color:var(--accent);font-weight:700">${fmtP(m.costo)}</div>
+          </div>
+          <button style="background:var(--del-bg);border:1px solid var(--del-border);color:var(--del-text);border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0" onclick="S.form.materiales.splice(${idx},1);render()">✕</button>
+        </div>`).join("")+`</div>`:""}
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="mat-nombre" class="field-input" style="flex:2;padding:9px 12px;font-size:13px" placeholder="Ej. Flex de carga" oninput="S._matNombre=this.value">
+        <input id="mat-costo" class="field-input" style="flex:1;padding:9px 12px;font-size:13px" type="number" inputmode="decimal" placeholder="RD$" oninput="S._matCosto=parseFloat(this.value)||0">
+        <button class="btn btn-accent" style="padding:9px 13px;font-size:13px;flex-shrink:0" onclick="const n=document.getElementById('mat-nombre').value.trim();const c=S._matCosto||0;if(!n){showToast('Escribe el nombre del material','err');return;}if(!S.form.materiales)S.form.materiales=[];S.form.materiales.push({nombre:n,costo:c});S._matNombre='';S._matCosto=0;render()">＋</button>
+      </div>
+      ${(f.materiales||[]).length>0?`<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;background:var(--card-solid);border-radius:8px;padding:8px 12px;border:1px solid var(--card-border)"><span style="font-size:12px;color:var(--sub);font-weight:600">Total materiales</span><span style="font-size:14px;font-weight:900;color:#f59e0b">${fmtP((f.materiales||[]).reduce((s,m)=>s+(m.costo||0),0))}</span></div>`:""}
+    </div>
     <div class="field"><div class="field-label">Estado de reparación</div><div class="rs-grid">${rsBtns}</div></div>
     <div class="sec-div">📝 Notas adicionales</div>
     <div class="field"><textarea class="field-textarea" placeholder="Observaciones, accesorios..." oninput="S.form.notas=this.value">${f.notas||""}</textarea></div>
@@ -670,30 +717,82 @@ window.shareInvoice=async invId=>{const inv=S.invoices.find(i=>i.id===invId);if(
 window.deleteInv=async id=>{await fsDel("invoices",id);setScreen("invoices");};
 
 /* ── BILLING SCREEN ── */
+function invCosto(inv){
+  // Cost = product costs for sale items + materials cost for repair items
+  return (inv.items||[]).reduce((s,it)=>{
+    if(it.prodId){
+      const p=S.products.find(x=>x.id===it.prodId);
+      return s+((p&&p.costo?parseFloat(p.costo):0)*it.qty);
+    }
+    if(it.eqId){
+      const eq=S.equipment.find(x=>x.id===it.eqId);
+      const matCost=eq?(eq.materiales||[]).reduce((ms,m)=>ms+(m.costo||0),0):0;
+      return s+matCost;
+    }
+    return s;
+  },0);
+}
 function rBilling(){
   if(!S.loaded.inv)return rLoading();
   const todayStr=today();
-  const nowDate=new Date();
   const thisMonth=todayStr.slice(0,7);
   const invHoy=S.invoices.filter(i=>i.fecha===todayStr);
   const invMes=S.invoices.filter(i=>i.fecha&&i.fecha.startsWith(thisMonth));
   const invAll=S.invoices;
   const sum=arr=>arr.reduce((s,i)=>s+invTotal(i),0);
+  const sumCosto=arr=>arr.reduce((s,i)=>s+invCosto(i),0);
   const byType=(arr,t)=>arr.filter(i=>i.tipo===t);
   const period=S.billingPeriod;
   const invSel=period==="hoy"?invHoy:period==="mes"?invMes:invAll;
   const totalSel=sum(invSel);
+  const costoSel=sumCosto(invSel);
+  const ganancia=totalSel-costoSel;
   const repSel=sum(byType(invSel,"reparacion"));
   const venSel=sum(byType(invSel,"venta"));
   const mixSel=sum(byType(invSel,"mixta"));
+  const periodLabel=period==="hoy"?"hoy":period==="mes"?"este mes":"acumulado";
   const periodChps=["hoy","mes","total"].map(p=>`<button class="chip${S.billingPeriod===p?" active":""}" onclick="S.billingPeriod='${p}';render()">${p==="hoy"?"📅 Hoy":p==="mes"?"📆 Este mes":"🗂️ Todo"}</button>`).join("");
-  const recentRows=invSel.slice(0,8).map(inv=>`<div class="info-row" style="cursor:pointer" onclick="S.selectedInvId='${inv.id}';setScreen('invdetail')"><span class="info-label" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${inv.cliente}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--muted)">${inv.fecha}</span><span style="font-size:13px;font-weight:800;color:#10b981">${fmtP(invTotal(inv))}</span></div></div>`).join("");
+  const recentRows=invSel.slice(0,8).map(inv=>{
+    const costo=invCosto(inv);
+    return `<div class="info-row" style="cursor:pointer" onclick="S.selectedInvId='${inv.id}';setScreen('invdetail')"><span class="info-label" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${inv.cliente}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--muted)">${inv.fecha}</span><span style="font-size:13px;font-weight:800;color:#10b981">${fmtP(invTotal(inv))}</span>${costo>0?`<span style="font-size:11px;font-weight:700;color:#f87171">-${fmtP(costo)}</span>`:""}</div></div>`;
+  }).join("");
+  // Margin bar percentage
+  const margenPct=totalSel>0?Math.round((ganancia/totalSel)*100):0;
+  const margenColor=margenPct>=50?"#10b981":margenPct>=25?"#f59e0b":"#ef4444";
   return `<div class="header"><div class="logo">JC SOLUTION</div><div class="title">Ingresos</div><div class="subtitle">Resumen de facturación</div></div>
   <div style="padding:16px 16px 120px">
     <div class="chips" style="padding:0 0 14px">${periodChps}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-      <div class="billing-tile" style="grid-column:1/-1;background:linear-gradient(135deg,#059669,#10b981)"><div class="billing-tile-val" style="color:#fff;font-size:28px">${fmtP(totalSel)}</div><div class="billing-tile-label" style="color:rgba(255,255,255,.8)">Total ${period==="hoy"?"hoy":period==="mes"?"este mes":"acumulado"}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${invSel.length} factura${invSel.length!==1?"s":""}</div></div>
+      <!-- GENERADO -->
+      <div class="billing-tile" style="grid-column:1/-1;background:linear-gradient(135deg,#059669,#10b981)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="billing-tile-label" style="color:rgba(255,255,255,.75);margin-bottom:4px">💰 Generado ${periodLabel}</div>
+            <div class="billing-tile-val" style="color:#fff;font-size:28px">${fmtP(totalSel)}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:4px">${invSel.length} factura${invSel.length!==1?"s":""}</div>
+          </div>
+          ${costoSel>0?`<div style="text-align:right">
+            <div style="font-size:10px;color:rgba(255,255,255,.65);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">Margen</div>
+            <div style="font-size:22px;font-weight:900;color:#fff">${margenPct}%</div>
+          </div>`:""}
+        </div>
+        ${costoSel>0?`<div style="margin-top:10px;background:rgba(0,0,0,.2);border-radius:6px;height:5px;overflow:hidden"><div style="height:100%;border-radius:6px;background:rgba(255,255,255,.85);width:${margenPct}%"></div></div>`:""}
+      </div>
+      <!-- INVERTIDO -->
+      <div class="billing-tile" style="border:1px solid #ef444330;background:var(--del-bg)">
+        <div class="billing-tile-label" style="color:#f87171;margin-bottom:4px">📤 Invertido</div>
+        <div class="billing-tile-val" style="color:#f87171;font-size:22px">${fmtP(costoSel)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Costo de productos</div>
+      </div>
+      <!-- GANANCIA NETA -->
+      <div class="billing-tile" style="border:1px solid ${ganancia>=0?"#10b98130":"#ef444330"};background:${ganancia>=0?"#0a1f12":"var(--del-bg)"}">
+        <div class="billing-tile-label" style="color:${ganancia>=0?"#34d399":"#f87171"};margin-bottom:4px">${ganancia>=0?"✨ Ganancia neta":"⚠️ Pérdida"}</div>
+        <div class="billing-tile-val" style="color:${ganancia>=0?"#34d399":"#f87171"};font-size:22px">${fmtP(Math.abs(ganancia))}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${costoSel>0?`${margenPct}% de margen`:"Solo reparaciones"}</div>
+      </div>
+      <!-- REPARACIONES -->
       <div class="billing-tile"><div class="billing-tile-val" style="color:#f59e0b">${fmtP(repSel)}</div><div class="billing-tile-label">🔧 Reparaciones</div><div style="font-size:11px;color:var(--muted)">${byType(invSel,"reparacion").length} fact.</div></div>
+      <!-- VENTAS -->
       <div class="billing-tile"><div class="billing-tile-val" style="color:#818cf8">${fmtP(venSel+mixSel)}</div><div class="billing-tile-label">🛍️ Ventas</div><div style="font-size:11px;color:var(--muted)">${byType(invSel,"venta").length+byType(invSel,"mixta").length} fact.</div></div>
     </div>
     ${invSel.length>0?`<div class="info-card"><div class="info-title">Facturas del período</div>${recentRows}</div>`:`<div class="empty"><div style="font-size:48px">📭</div><div style="margin-top:10px">Sin facturas en este período</div></div>`}
